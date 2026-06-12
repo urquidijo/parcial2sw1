@@ -43,14 +43,18 @@ declare global {
   imports: [CommonModule, RouterLink, FormsModule, MatCardModule, MatButtonModule, MatCheckboxModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressSpinnerModule, MatSnackBarModule],
   template: `
     <div class="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-3xl font-bold text-slate-900">Tramites</h2>
-        <button mat-flat-button color="primary" (click)="openCreate()"><mat-icon>add</mat-icon> Nuevo Tramite</button>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900">Expedientes</h2>
+          <p class="mt-1 text-sm text-slate-500">Gestiona y da seguimiento a tus solicitudes.</p>
+        </div>
+        <button mat-flat-button color="primary" (click)="openCreate()" class="!rounded-full"><mat-icon>add</mat-icon> Nueva Solicitud</button>
       </div>
 
-      <div class="max-w-[320px]">
+      <div class="max-w-[340px]">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Buscar por codigo</mat-label>
+          <mat-label>Buscar por código</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
           <input matInput [ngModel]="codeFilter()" (ngModelChange)="codeFilter.set($event)" placeholder="Ej: TRM00068">
           @if (codeFilter().trim()) { <button mat-icon-button matSuffix (click)="codeFilter.set('')"><mat-icon>close</mat-icon></button> }
         </mat-form-field>
@@ -58,24 +62,26 @@ declare global {
 
       @if (loading()) { <div class="flex justify-center py-16"><mat-spinner /></div> }
       @else {
-        <div class="overflow-hidden rounded-3xl bg-white shadow-sm">
+        <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
-              <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr><th class="px-4 py-3">Codigo</th><th class="px-4 py-3">Titulo</th><th class="px-4 py-3">Estado</th><th class="px-4 py-3">Workflow</th><th class="px-4 py-3">Fecha</th><th class="px-4 py-3"></th></tr>
+              <thead class="border-b border-slate-100">
+                <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <th class="px-5 py-3.5">Código</th><th class="px-5 py-3.5">Título</th><th class="px-5 py-3.5">Estado</th><th class="px-5 py-3.5">Proceso</th><th class="px-5 py-3.5">Fecha</th><th class="px-5 py-3.5"></th>
+                </tr>
               </thead>
               <tbody>
                 @for (p of filteredTramites(); track p.id) {
-                  <tr class="border-t border-slate-100 hover:bg-slate-50">
-                    <td class="px-4 py-3"><code class="rounded bg-slate-100 px-2 py-1 text-xs">{{ p.code }}</code></td>
-                    <td class="px-4 py-3">{{ p.title }}</td>
-                    <td class="px-4 py-3"><span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="statusClass(p.status)">{{ p.status }}</span></td>
-                    <td class="px-4 py-3">{{ wfName(p.workflowId) }}</td>
-                    <td class="px-4 py-3">{{ p.createdAt | date:'dd/MM/yyyy' }}</td>
-                    <td class="px-4 py-3"><button mat-icon-button [routerLink]="[p.id]"><mat-icon>visibility</mat-icon></button></td>
+                  <tr class="border-b border-slate-50 transition hover:bg-violet-50/30">
+                    <td class="px-5 py-3.5"><span class="rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-semibold text-slate-600">{{ p.code }}</span></td>
+                    <td class="px-5 py-3.5 font-medium text-slate-800">{{ p.title }}</td>
+                    <td class="px-5 py-3.5"><span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="statusClass(p.status)">{{ p.status }}</span></td>
+                    <td class="px-5 py-3.5 text-slate-600">{{ wfName(p.workflowId) }}</td>
+                    <td class="px-5 py-3.5 text-slate-500">{{ p.createdAt | date:'dd/MM/yyyy' }}</td>
+                    <td class="px-5 py-3.5"><button mat-icon-button [routerLink]="[p.id]" class="!h-8 !w-8"><mat-icon class="!text-[18px] text-slate-400">arrow_forward</mat-icon></button></td>
                   </tr>
                 }
-                @empty { <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">No hay tramites</td></tr> }
+                @empty { <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400">No hay expedientes</td></tr> }
               </tbody>
             </table>
           </div>
@@ -83,9 +89,13 @@ declare global {
       }
 
       @if (showForm()) {
-        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 px-4" (click)="closeCreate()">
-          <mat-card class="max-h-[85vh] w-full max-w-[540px] overflow-auto rounded-3xl p-6 shadow-2xl" (click)="$event.stopPropagation()">
-            <h3 class="mb-4 text-xl font-semibold text-slate-900">Nuevo Tramite</h3>
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/50 px-4" (click)="closeCreate()">
+          <mat-card class="max-h-[85vh] w-full max-w-[540px] overflow-auto rounded-2xl !p-0 shadow-2xl" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h3 class="text-lg font-semibold text-slate-900">Nueva Solicitud</h3>
+              <button mat-icon-button (click)="closeCreate()"><mat-icon class="text-slate-400">close</mat-icon></button>
+            </div>
+            <div class="p-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Workflow</mat-label>
               <mat-select [(ngModel)]="formWorkflowId" (ngModelChange)="onWorkflowChange($event)">
@@ -100,18 +110,18 @@ declare global {
                 <div class="mb-3 flex flex-col gap-2">
                   <h4 class="text-sm font-semibold text-slate-900">{{ entryNodo()!.formDefinition?.title || 'Formulario' }}</h4>
                   <div class="flex flex-wrap gap-2">
-                    <button mat-stroked-button type="button" [disabled]="voiceLoading()" (click)="toggleVoiceCapture()">
+                    <button mat-stroked-button type="button" [disabled]="voiceLoading()" (click)="toggleVoiceCapture()" class="!rounded-full">
                       <mat-icon>{{ voiceListening() ? 'mic_off' : 'mic' }}</mat-icon>
                       {{ voiceListening() ? 'Detener voz' : 'Llenar por voz' }}
                     </button>
-                    <button mat-flat-button color="accent" type="button" [disabled]="tfVoiceLoading()" (click)="toggleTfVoiceCapture()" style="background:#6366f1;color:#fff">
+                    <button mat-flat-button color="accent" type="button" [disabled]="tfVoiceLoading()" (click)="toggleTfVoiceCapture()" class="!rounded-full" style="background:#7c3aed;color:#fff">
                       <mat-icon>{{ tfVoiceListening() ? 'mic_off' : 'psychology' }}</mat-icon>
-                      {{ tfVoiceListening() ? 'Detener TF...' : tfVoiceLoading() ? 'Analizando...' : 'Llenar con TF' }}
+                      {{ tfVoiceListening() ? 'Detener IA...' : tfVoiceLoading() ? 'Analizando...' : 'Llenar con IA' }}
                     </button>
                   </div>
                   @if (tfVoiceTranscript()) {
-                    <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
-                      <strong>TF escuchando:</strong> {{ tfVoiceTranscript() }}
+                    <div class="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+                      <strong>IA escuchando:</strong> {{ tfVoiceTranscript() }}
                     </div>
                   }
                 </div>
@@ -202,9 +212,10 @@ declare global {
               }
             }
 
-            <div class="mt-2 flex justify-end gap-2">
+            <div class="mt-4 flex justify-end gap-2">
               <button mat-button (click)="closeCreate()">Cancelar</button>
-              <button mat-flat-button color="primary" (click)="save()" [disabled]="loadingWorkflowDetail() || submitting()">{{ submitting() ? 'Enviando...' : 'Enviar' }}</button>
+              <button mat-flat-button color="primary" (click)="save()" class="!rounded-full" [disabled]="loadingWorkflowDetail() || submitting()">{{ submitting() ? 'Enviando...' : 'Enviar solicitud' }}</button>
+            </div>
             </div>
           </mat-card>
         </div>
@@ -267,7 +278,7 @@ export class TramiteListComponent implements OnInit {
   }
 
   statusClass(s: string) {
-    return ({ PENDIENTE: 'bg-amber-100 text-amber-800', EN_PROGRESO: 'bg-blue-100 text-blue-800', COMPLETADO: 'bg-emerald-100 text-emerald-800', RECHAZADO: 'bg-rose-100 text-rose-800' } as Record<string, string>)[s] ?? 'bg-slate-100 text-slate-700';
+    return ({ PENDIENTE: 'bg-amber-100 text-amber-700', EN_PROGRESO: 'bg-sky-100 text-sky-700', COMPLETADO: 'bg-emerald-100 text-emerald-700', RECHAZADO: 'bg-rose-100 text-rose-700' } as Record<string, string>)[s] ?? 'bg-slate-100 text-slate-600';
   }
 
   wfName(id: string) { return this.workflows().find(w => w.id === id)?.name || id; }
