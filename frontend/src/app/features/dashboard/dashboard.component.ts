@@ -15,7 +15,7 @@ interface Company {
   imports: [CommonModule, MatProgressSpinnerModule],
   template: `
     <div class="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-6 py-6">
-      <h2 class="text-3xl font-bold text-slate-900">Dashboard</h2>
+      <h2 class="text-3xl font-bold text-slate-900">Inicio</h2>
 
       @if (loading()) {
         <div class="flex justify-center py-16"><mat-spinner /></div>

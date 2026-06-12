@@ -42,7 +42,7 @@ import { TfOfflineService } from '../core/services/tf-offline.service';
             <a mat-list-item routerLink="/dashboard" routerLinkActive="bg-indigo-500/20 text-white"
               class="mx-2 my-1 rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white">
               <mat-icon matListItemIcon>dashboard</mat-icon>
-              <span matListItemTitle>Dashboard</span>
+              <span matListItemTitle>Inicio</span>
             </a>
             <a mat-list-item routerLink="/workflows" routerLinkActive="bg-indigo-500/20 text-white"
               class="mx-2 my-1 rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white">
