@@ -69,12 +69,17 @@ async def lifespan(app: FastAPI):
     form_filler = FormFiller()
 
     try:
-        data_svc   = DataService()
-        wf_matcher = WorkflowMatcher(data_svc.db)
-        logger.info("✓ Spring Boot API conectada, workflows cargados.")
+        data_svc = DataService()
+        logger.info("✓ DataService listo.")
     except Exception as e:
-        logger.warning(f"Spring Boot no disponible: {e}. Arrancando sin workflows.")
-        data_svc   = None
+        logger.warning(f"DataService no disponible: {e}")
+        data_svc = None
+
+    try:
+        wf_matcher = WorkflowMatcher()
+        logger.info("✓ WorkflowMatcher listo.")
+    except Exception as e:
+        logger.warning(f"WorkflowMatcher no disponible: {e}")
         wf_matcher = None
 
     try:
