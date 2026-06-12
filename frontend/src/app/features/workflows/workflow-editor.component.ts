@@ -276,15 +276,19 @@ interface FormVoiceDesignResult {
     WorkflowAiPanelComponent
   ],
   template: `
-    <div class="min-h-full bg-[#eef2ff] p-6">
+    <div class="min-h-full bg-gray-50 p-6">
       <div class="flex flex-col gap-[18px]">
         <header class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div class="flex items-start gap-3">
-            <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
+            <button mat-icon-button (click)="goBack()" class="!mt-1">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
             <div>
-              <div class="text-[11px] uppercase tracking-[.14em] text-slate-500">Workflow</div>
-              <h1 class="m-0 text-[30px] leading-none text-slate-950">{{ workflow()?.name || 'Editor' }}</h1>
-              <p class="mt-1 text-sm text-slate-500">{{ workflow()?.description || 'Editor visual del workflow' }}</p>
+              <div class="flex items-center gap-2">
+                <span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-violet-600">Proceso</span>
+              </div>
+              <h1 class="m-0 mt-1 text-[28px] font-bold leading-none text-slate-900">{{ workflow()?.name || 'Editor' }}</h1>
+              <p class="mt-1.5 text-sm text-slate-500">{{ workflow()?.description || 'Editor visual del proceso' }}</p>
             </div>
           </div>
         </header>
@@ -294,12 +298,17 @@ interface FormVoiceDesignResult {
         } @else {
           <div class="grid min-h-[78vh] gap-[18px] xl:grid-cols-[240px_minmax(0,1fr)_360px]">
             <aside class="rounded-[22px] border border-slate-200 bg-white p-[18px] shadow-[0_8px_30px_rgba(15,23,42,.05)]">
-              <h3 class="m-0 mb-2.5 text-lg text-slate-950">Tipos de nodo</h3>
+              <div class="mb-3 flex items-center gap-2">
+                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
+                  <mat-icon class="!text-[16px] text-violet-600">account_tree</mat-icon>
+                </div>
+                <h3 class="m-0 text-base font-semibold text-slate-900">Elementos</h3>
+              </div>
 
-              <div class="grid gap-2.5">
+              <div class="grid gap-2">
                 @for (item of palette; track item.type) {
                   <button
-                    class="flex items-center gap-2.5 rounded-2xl border border-dashed border-indigo-200 bg-slate-50 px-3 py-3 text-left text-slate-900 transition hover:border-indigo-400 hover:bg-indigo-50"
+                    class="flex items-center gap-2.5 rounded-2xl border border-dashed border-violet-200 bg-slate-50 px-3 py-3 text-left text-slate-900 transition hover:border-violet-400 hover:bg-violet-50"
                     draggable="true"
                     (dragstart)="onPaletteDragStart($event, item.type)"
                     (dragend)="onPaletteDragEnd()"
@@ -319,9 +328,9 @@ interface FormVoiceDesignResult {
                     <button
                       type="button"
                       class="shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition"
-                      [class.border-indigo-500]="isLaneVisible(department.id)"
-                      [class.bg-indigo-50]="isLaneVisible(department.id)"
-                      [class.text-indigo-700]="isLaneVisible(department.id)"
+                      [class.border-violet-500]="isLaneVisible(department.id)"
+                      [class.bg-violet-50]="isLaneVisible(department.id)"
+                      [class.text-violet-700]="isLaneVisible(department.id)"
                       [class.border-slate-300]="!isLaneVisible(department.id)"
                       [class.bg-white]="!isLaneVisible(department.id)"
                       [class.text-slate-700]="!isLaneVisible(department.id)"
@@ -353,7 +362,7 @@ interface FormVoiceDesignResult {
               <div class="relative flex-1 overflow-auto bg-slate-50"
                    (click)="clearSelection()">
                 @if (draggingPalette()) {
-                  <div class="absolute inset-0 z-30 flex items-center justify-center border-2 border-dashed border-indigo-400 bg-indigo-100/70 text-base font-semibold text-indigo-700"
+                  <div class="absolute inset-0 z-30 flex items-center justify-center border-2 border-dashed border-violet-400 bg-violet-100/70 text-base font-semibold text-violet-700"
                        (dragover)="allowPaletteDrop($event)"
                        (drop)="onCanvasDrop($event)">
                     Suelta aqui para crear el nodo
@@ -386,7 +395,7 @@ interface FormVoiceDesignResult {
                         <path d="M0,0 L14,5 L0,10 z" fill="#334155"></path>
                       </marker>
                       <marker id="arrow-selected" markerWidth="14" markerHeight="10" refX="13" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-                        <path d="M0,0 L14,5 L0,10 z" fill="#4f46e5"></path>
+                        <path d="M0,0 L14,5 L0,10 z" fill="#7c3aed"></path>
                       </marker>
                     </defs>
 
@@ -398,7 +407,7 @@ interface FormVoiceDesignResult {
                             class="cursor-pointer"
                             (click)="onTransitionClick(transition, $event)"></path>
                       <path [attr.d]="transitionPath(transition)"
-                            [attr.stroke]="selectedTransitionId() === transition.id ? '#4f46e5' : '#334155'"
+                            [attr.stroke]="selectedTransitionId() === transition.id ? '#7c3aed' : '#334155'"
                             stroke-width="2.2"
                             fill="none"
                             [attr.marker-end]="selectedTransitionId() === transition.id ? 'url(#arrow-selected)' : 'url(#arrow-default)'"></path>
@@ -407,9 +416,9 @@ interface FormVoiceDesignResult {
                           <g class="cursor-pointer" (click)="onTransitionClick(transition, $event)">
                             <rect [attr.x]="labelPos.x - 34" [attr.y]="labelPos.y - 12" width="68" height="24" rx="12"
                                   fill="white"
-                                  [attr.stroke]="selectedTransitionId() === transition.id ? '#4f46e5' : '#cbd5e1'"></rect>
+                                  [attr.stroke]="selectedTransitionId() === transition.id ? '#7c3aed' : '#cbd5e1'"></rect>
                             <text [attr.x]="labelPos.x" [attr.y]="labelPos.y + 4" text-anchor="middle" font-size="11" font-weight="700"
-                                  [attr.fill]="selectedTransitionId() === transition.id ? '#4f46e5' : '#334155'">
+                                  [attr.fill]="selectedTransitionId() === transition.id ? '#7c3aed' : '#334155'">
                               {{ label }}
                             </text>
                           </g>
@@ -429,7 +438,7 @@ interface FormVoiceDesignResult {
                          (click)="onNodoClick(nodo, $event)">
                       <div [class]="nodeCardClass(nodo)">
                         <button type="button"
-                                class="absolute -right-2 -top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-indigo-200 bg-white text-indigo-600 shadow hover:bg-indigo-50"
+                                class="absolute -right-2 -top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-violet-200 bg-white text-violet-600 shadow hover:bg-violet-50"
                                 title="Conectar"
                                 (click)="iniciarConexion(nodo, $event)">
                           <mat-icon class="!h-4 !w-4 !text-[16px]">add_link</mat-icon>
@@ -470,46 +479,72 @@ interface FormVoiceDesignResult {
             </section>
 
             <aside class="rounded-[22px] border border-slate-200 bg-white p-[18px] shadow-[0_8px_30px_rgba(15,23,42,.05)]">
-              <div class="mb-4 space-y-1">
-                <div class="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
-                  <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold"
-                          [class.bg-white]="sidebarTab() === 'inspector'"
-                          [class.text-indigo-700]="sidebarTab() === 'inspector'"
-                          (click)="sidebarTab.set('inspector')">Inspector</button>
-                  <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold"
-                          [class.bg-white]="sidebarTab() === 'priority'"
-                          [class.text-indigo-700]="sidebarTab() === 'priority'"
-                          (click)="sidebarTab.set('priority')">Prioridad</button>
-                  <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold"
-                          [class.bg-white]="sidebarTab() === 'anomaly'"
-                          [class.text-indigo-700]="sidebarTab() === 'anomaly'"
-                          (click)="sidebarTab.set('anomaly')">Anomalías</button>
-                </div>
-                <div class="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
-                  <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold"
-                          [class.bg-white]="sidebarTab() === 'bottleneck'"
-                          [class.text-indigo-700]="sidebarTab() === 'bottleneck'"
-                          (click)="sidebarTab.set('bottleneck')">Cuello de Botella</button>
-                  <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold"
-                          [class.bg-white]="sidebarTab() === 'delay'"
-                          [class.text-indigo-700]="sidebarTab() === 'delay'"
-                          (click)="sidebarTab.set('delay')">Demora</button>
-                </div>
+              <div class="mb-4 flex gap-1 rounded-2xl bg-slate-100 p-1">
+                <button type="button"
+                        class="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-[10px] font-semibold leading-none text-slate-400 transition-all"
+                        [class.bg-white]="sidebarTab() === 'inspector'"
+                        [class.!text-violet-700]="sidebarTab() === 'inspector'"
+                        [class.shadow-sm]="sidebarTab() === 'inspector'"
+                        (click)="sidebarTab.set('inspector')">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] !leading-none">tune</mat-icon>
+                  <span class="mt-1">Inspector</span>
+                </button>
+                <button type="button"
+                        class="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-[10px] font-semibold leading-none text-slate-400 transition-all"
+                        [class.bg-white]="sidebarTab() === 'priority'"
+                        [class.!text-violet-700]="sidebarTab() === 'priority'"
+                        [class.shadow-sm]="sidebarTab() === 'priority'"
+                        (click)="sidebarTab.set('priority')">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] !leading-none">bolt</mat-icon>
+                  <span class="mt-1">Prioridad</span>
+                </button>
+                <button type="button"
+                        class="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-[10px] font-semibold leading-none text-slate-400 transition-all"
+                        [class.bg-white]="sidebarTab() === 'anomaly'"
+                        [class.!text-violet-700]="sidebarTab() === 'anomaly'"
+                        [class.shadow-sm]="sidebarTab() === 'anomaly'"
+                        (click)="sidebarTab.set('anomaly')">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] !leading-none">radar</mat-icon>
+                  <span class="mt-1">Anomalías</span>
+                </button>
+                <button type="button"
+                        class="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-[10px] font-semibold leading-none text-slate-400 transition-all"
+                        [class.bg-white]="sidebarTab() === 'bottleneck'"
+                        [class.!text-violet-700]="sidebarTab() === 'bottleneck'"
+                        [class.shadow-sm]="sidebarTab() === 'bottleneck'"
+                        (click)="sidebarTab.set('bottleneck')">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] !leading-none">compress</mat-icon>
+                  <span class="mt-1">Cuellos</span>
+                </button>
+                <button type="button"
+                        class="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2.5 text-[10px] font-semibold leading-none text-slate-400 transition-all"
+                        [class.bg-white]="sidebarTab() === 'delay'"
+                        [class.!text-violet-700]="sidebarTab() === 'delay'"
+                        [class.shadow-sm]="sidebarTab() === 'delay'"
+                        (click)="sidebarTab.set('delay')">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] !leading-none">schedule</mat-icon>
+                  <span class="mt-1">Demora</span>
+                </button>
               </div>
 
               @if (sidebarTab() === 'inspector' && selectedNodo()) {
-                <h3 class="m-0 mb-3 text-lg text-slate-950">Editar nodo</h3>
+                <div class="mb-4 flex items-center gap-2">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
+                    <mat-icon class="!text-[16px] text-violet-600">tune</mat-icon>
+                  </div>
+                  <h3 class="m-0 text-base font-semibold text-slate-900">Editar nodo</h3>
+                </div>
 
                 @if (incomingFieldsForSelectedNodo().length) {
-                  <div class="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50 p-3">
+                  <div class="mb-4 rounded-2xl border border-violet-200 bg-violet-50 p-3">
                     <div class="mb-2 text-sm font-semibold text-slate-900">Datos que llegan a este nodo</div>
                     <div class="grid gap-3">
                       @for (block of incomingFieldsForSelectedNodo(); track block.fromNodoName) {
                         <div>
-                          <div class="mb-1 text-xs font-bold uppercase tracking-wide text-indigo-700">{{ block.fromNodoName }}</div>
+                          <div class="mb-1 text-xs font-bold uppercase tracking-wide text-violet-700">{{ block.fromNodoName }}</div>
                           <div class="flex flex-wrap gap-2">
                             @for (field of block.fields; track field.id) {
-                              <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700">{{ field.name }}</span>
+                              <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-violet-700">{{ field.name }}</span>
                             }
                           </div>
                         </div>
@@ -616,11 +651,11 @@ interface FormVoiceDesignResult {
                                   @for (column of field.columns || []; track column.id; let j = $index) {
                                     <div class="flex items-center gap-1.5">
                                       <input
-                                        class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-indigo-400"
+                                        class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-400"
                                         placeholder="Nombre"
                                         [(ngModel)]="column.name" />
                                       <select
-                                        class="w-[90px] shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-indigo-400"
+                                        class="w-[90px] shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-400"
                                         [(ngModel)]="column.type">
                                         @for (type of gridColumnTypes; track type) {
                                           <option [value]="type">{{ type }}</option>
@@ -677,9 +712,14 @@ interface FormVoiceDesignResult {
                   </div>
                 </div>
               } @else if (sidebarTab() === 'inspector' && selectedTransition()) {
-                <h3 class="m-0 mb-3 text-lg text-slate-950">Editar conexion</h3>
+                <div class="mb-4 flex items-center gap-2">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
+                    <mat-icon class="!text-[16px] text-violet-600">cable</mat-icon>
+                  </div>
+                  <h3 class="m-0 text-base font-semibold text-slate-900">Editar conexión</h3>
+                </div>
                 <div class="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                  {{ sourceNodoName(selectedTransition()!) }} -> {{ targetNodoName(selectedTransition()!) }}
+                  {{ sourceNodoName(selectedTransition()!) }} → {{ targetNodoName(selectedTransition()!) }}
                 </div>
 
                     <mat-form-field appearance="outline" class="w-full">
@@ -713,12 +753,12 @@ interface FormVoiceDesignResult {
                     </div>
                   </div>
 
-                  <div class="mt-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-3">
+                  <div class="mt-3 rounded-2xl border border-violet-200 bg-violet-50 p-3">
                     <div class="mb-2 text-sm font-semibold text-slate-900">Campos que pasan de A a B</div>
                     @if (resolvedForwardFields().length) {
                       <div class="flex flex-wrap gap-2">
                         @for (field of resolvedForwardFields(); track field.name) {
-                          <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700">{{ field.name }}</span>
+                          <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-violet-700">{{ field.name }}</span>
                         }
                       </div>
                     } @else {
@@ -742,9 +782,14 @@ interface FormVoiceDesignResult {
               } @else if (sidebarTab() === 'priority') {
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
-                    <h3 class="m-0 text-lg text-slate-950">Prioridad</h3>
-                    <button mat-stroked-button [disabled]="priorityLoading() || !workflow()?.id" (click)="runPriorityAnalysis()">
-                      @if (priorityLoading()) { <mat-spinner diameter="16" /> } @else { <mat-icon>bolt</mat-icon> }
+                    <div class="flex items-center gap-2">
+                      <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50">
+                        <mat-icon class="!text-[16px] text-amber-500">bolt</mat-icon>
+                      </div>
+                      <h3 class="m-0 text-base font-semibold text-slate-900">Prioridad</h3>
+                    </div>
+                    <button mat-stroked-button [disabled]="priorityLoading() || !workflow()?.id" (click)="runPriorityAnalysis()" class="!rounded-full !text-xs">
+                      @if (priorityLoading()) { <mat-spinner diameter="14" /> } @else { <mat-icon class="!text-[14px]">play_arrow</mat-icon> }
                       Entrenar
                     </button>
                   </div>
@@ -764,11 +809,11 @@ interface FormVoiceDesignResult {
                             <div class="text-sm font-semibold text-slate-800">{{ t.code }}</div>
                             @if (t.title) { <div class="mt-0.5 text-xs text-slate-500">{{ t.title }}</div> }
                           </div>
-                          <span class="shrink-0 rounded-full bg-slate-800 px-2.5 py-0.5 text-sm font-bold tabular-nums text-white">{{ (t.urgencyScore * 100).toFixed(0) }}%</span>
+                          <span class="shrink-0 rounded-full bg-gradient-to-r from-violet-600 to-purple-700 px-2.5 py-0.5 text-sm font-bold tabular-nums text-white">{{ (t.urgencyScore * 100).toFixed(0) }}%</span>
                         </div>
                         <div class="mt-2 text-xs text-slate-500">Abierto hace {{ formatHours(t.elapsedHours) }} &nbsp;·&nbsp; Debió cerrarse en {{ formatHours(t.expectedHours) }}</div>
                         <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                          <div class="h-full rounded-full bg-slate-800 transition-all" [style.width.%]="t.urgencyScore * 100"></div>
+                          <div class="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-600 transition-all" [style.width.%]="t.urgencyScore * 100"></div>
                         </div>
                       </div>
                     }
@@ -779,9 +824,14 @@ interface FormVoiceDesignResult {
               } @else if (sidebarTab() === 'anomaly') {
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
-                    <h3 class="m-0 text-lg text-slate-950">Anomalías</h3>
-                    <button mat-stroked-button [disabled]="anomalyLoading() || !workflow()?.id" (click)="runAnomalyAnalysis()">
-                      @if (anomalyLoading()) { <mat-spinner diameter="16" /> } @else { <mat-icon>radar</mat-icon> }
+                    <div class="flex items-center gap-2">
+                      <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50">
+                        <mat-icon class="!text-[16px] text-rose-500">radar</mat-icon>
+                      </div>
+                      <h3 class="m-0 text-base font-semibold text-slate-900">Anomalías</h3>
+                    </div>
+                    <button mat-stroked-button [disabled]="anomalyLoading() || !workflow()?.id" (click)="runAnomalyAnalysis()" class="!rounded-full !text-xs">
+                      @if (anomalyLoading()) { <mat-spinner diameter="14" /> } @else { <mat-icon class="!text-[14px]">play_arrow</mat-icon> }
                       Entrenar
                     </button>
                   </div>
@@ -812,9 +862,14 @@ interface FormVoiceDesignResult {
               } @else if (sidebarTab() === 'bottleneck') {
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
-                    <h3 class="m-0 text-lg text-slate-950">Cuello de Botella</h3>
-                    <button mat-stroked-button [disabled]="bottleneckLoading() || !workflow()?.id" (click)="runBottleneckAnalysis()">
-                      @if (bottleneckLoading()) { <mat-spinner diameter="16" /> } @else { <mat-icon>compress</mat-icon> }
+                    <div class="flex items-center gap-2">
+                      <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50">
+                        <mat-icon class="!text-[16px] text-orange-500">compress</mat-icon>
+                      </div>
+                      <h3 class="m-0 text-base font-semibold text-slate-900">Cuellos de Botella</h3>
+                    </div>
+                    <button mat-stroked-button [disabled]="bottleneckLoading() || !workflow()?.id" (click)="runBottleneckAnalysis()" class="!rounded-full !text-xs">
+                      @if (bottleneckLoading()) { <mat-spinner diameter="14" /> } @else { <mat-icon class="!text-[14px]">play_arrow</mat-icon> }
                       Analizar
                     </button>
                   </div>
@@ -847,9 +902,14 @@ interface FormVoiceDesignResult {
               } @else if (sidebarTab() === 'delay') {
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
-                    <h3 class="m-0 text-lg text-slate-950">Demora</h3>
-                    <button mat-stroked-button [disabled]="delayLoading() || !workflow()?.id" (click)="runDelayAnalysis()">
-                      @if (delayLoading()) { <mat-spinner diameter="16" /> } @else { <mat-icon>schedule</mat-icon> }
+                    <div class="flex items-center gap-2">
+                      <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50">
+                        <mat-icon class="!text-[16px] text-sky-500">schedule</mat-icon>
+                      </div>
+                      <h3 class="m-0 text-base font-semibold text-slate-900">Demora</h3>
+                    </div>
+                    <button mat-stroked-button [disabled]="delayLoading() || !workflow()?.id" (click)="runDelayAnalysis()" class="!rounded-full !text-xs">
+                      @if (delayLoading()) { <mat-spinner diameter="14" /> } @else { <mat-icon class="!text-[14px]">play_arrow</mat-icon> }
                       Predecir
                     </button>
                   </div>
@@ -893,9 +953,18 @@ interface FormVoiceDesignResult {
                   }
                 </div>
               } @else {
-                <h3 class="m-0 mb-3 text-lg text-slate-950">Inspector</h3>
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                  Haz click en un nodo para editarlo o en la flecha para editar lo que pasa de A hacia B.
+                <div class="mb-4 flex items-center gap-2">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
+                    <mat-icon class="!text-[16px] text-violet-600">tune</mat-icon>
+                  </div>
+                  <h3 class="m-0 text-base font-semibold text-slate-900">Inspector</h3>
+                </div>
+                <div class="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-200">
+                    <mat-icon class="!text-[20px] text-slate-400">touch_app</mat-icon>
+                  </div>
+                  <p class="mt-3 text-sm font-medium text-slate-500">Selecciona un nodo o conexión</p>
+                  <p class="mt-1 text-xs text-slate-400">Haz click en cualquier elemento del diagrama para editarlo.</p>
                 </div>
               }
               <app-workflow-ai-panel
@@ -1337,7 +1406,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   nodeCardClass(nodo: Nodo) {
-    const selected = this.selectedNodoId() === nodo.id ? 'ring-4 ring-indigo-200 ' : '';
+    const selected = this.selectedNodoId() === nodo.id ? 'ring-4 ring-violet-300 ' : '';
     const connecting = this.connectingFromId() === nodo.id ? 'ring-4 ring-emerald-200 ' : '';
     const locked = this.isLockedByOther(nodo.id) ? 'opacity-60 cursor-not-allowed ' : 'cursor-pointer ';
     return `${selected}${connecting}${locked}relative transition`;
