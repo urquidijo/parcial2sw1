@@ -81,7 +81,7 @@ class DelayPredictor:
 
         delay_rate = {wid: sum(v) / len(v) for wid, v in wf_delays.items()}
 
-        if len(X) < 5:
+        if len(X) < 3:
             logger.warning("DelayPredictor: datos insuficientes, se usará solo hist_rate")
             return None, delay_rate
 

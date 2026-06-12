@@ -90,7 +90,7 @@ class AnomalyDetector:
                 span = (max(timestamps) - min(timestamps)).total_seconds() / 60
                 duration_per_t[tid] = span
 
-        # Agrupar trámites normales por workflow
+        # Agrupar trámites completados por workflow (todos sirven para entrenar)
         by_wf: dict = {}
         for t in tramites:
             wid = t.get("workflowId", "")
@@ -100,10 +100,6 @@ class AnomalyDetector:
             actual = duration_per_t.get(tid, 0.0)
             if actual == 0:
                 continue
-            wf     = self._wf_map[wid]
-            exp_min = max(wf["total_expected_min"], 1)
-            if actual > exp_min * 1.3:
-                continue  # descartamos anómalos del entrenamiento
             by_wf.setdefault(wid, []).append((t, actual, hist_by_t.get(tid, [])))
 
         for wid, samples in by_wf.items():
@@ -112,7 +108,27 @@ class AnomalyDetector:
 
     def _build_and_train(self, wid: str, wf: dict, samples: list):
         if not samples:
-            raise ValueError(f"No hay datos reales para entrenar [{wf['name']}]")
+            logger.warning(f"AnomalyDetector [{wf['name']}]: sin datos reales, usando sintéticos")
+            np.random.seed(42)
+            X_np = np.column_stack([
+                np.clip(np.random.normal(0.4, 0.2, 120), 0.0, 1.0),
+                np.linspace(0.0, 1.0, 120),
+                np.clip(np.random.normal(0.4, 0.2, 120), 0.0, 1.0),
+                np.full(120, 0.3),
+            ]).astype(np.float32)
+            inp        = self._tf.keras.Input(shape=(self.N,))
+            encoded    = self._tf.keras.layers.Dense(8, activation="relu")(inp)
+            bottleneck = self._tf.keras.layers.Dense(3, activation="relu")(encoded)
+            decoded    = self._tf.keras.layers.Dense(8, activation="relu")(bottleneck)
+            out        = self._tf.keras.layers.Dense(self.N, activation="sigmoid")(decoded)
+            model      = self._tf.keras.Model(inp, out)
+            model.compile(optimizer="adam", loss="mse")
+            model.fit(X_np, X_np, epochs=30, batch_size=16, verbose=0)
+            recon     = model.predict(X_np, verbose=0)
+            errors    = np.mean(np.square(X_np - recon), axis=1)
+            threshold = float(np.percentile(errors, 95))
+            logger.info(f"  AnomalyDetector [{wf['name']}]: sintético — threshold={threshold:.4f}")
+            return (model, threshold)
 
         exp_min = max(wf["total_expected_min"], 1)
         X = []
@@ -328,7 +344,7 @@ class AnomalyDetector:
         for t in tramites_comp:
             tid    = str(t["_id"])
             actual = duration_per_t.get(tid, 0.0)
-            if actual == 0 or actual > exp_min * 1.3:
+            if actual == 0:
                 continue
             samples.append((t, actual, hist_by_t.get(tid, [])))
 
