@@ -173,15 +173,15 @@ export class WorkflowListComponent implements OnInit {
     if (!this.formName.trim()) { this.snack.open('El nombre es requerido', '', { duration: 2500 }); return; }
     const payload = { name: this.formName.trim(), description: this.formDesc.trim(), companyId: this.formCompanyId };
     const req = this.editId()
-      ? this.api.put<Workflow>(`/workflows/${this.editId()}`, payload)
+      ? this.api.patch<Workflow>(`/workflows/${this.editId()}`, payload)
       : this.api.post<Workflow>('/workflows', payload);
     req.subscribe({
-      next: wf => {
+      next: (wf: Workflow) => {
         this.workflows.update(list => this.editId() ? list.map(w => w.id === wf.id ? wf : w) : [wf, ...list]);
         this.showForm.set(false);
         this.snack.open(this.editId() ? 'Proceso actualizado' : 'Proceso creado', '', { duration: 2500 });
       },
-      error: err => this.snack.open(err.error?.message || 'Error al guardar', '', { duration: 3000 })
+      error: (err: any) => this.snack.open(err.error?.message || 'Error al guardar', '', { duration: 3000 })
     });
   }
 
