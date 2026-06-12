@@ -93,6 +93,8 @@ class PriorityRanker:
     def rank_workflow(self, workflow_id: str) -> dict:
         """Rankea los trámites activos de un workflow específico."""
         if workflow_id not in self._wf_map:
+            self._wf_map, _ = load_workflows()
+        if workflow_id not in self._wf_map:
             raise ValueError(f"Workflow {workflow_id} no encontrado")
 
         wf         = self._wf_map[workflow_id]

@@ -296,6 +296,8 @@ class AnomalyDetector:
     def train_and_detect_workflow(self, workflow_id: str) -> dict:
         """Re-entrena el autoencoder para el workflow indicado y evalúa sus trámites activos."""
         if workflow_id not in self._wf_map:
+            self._wf_map, self._nodo_map = load_workflows()
+        if workflow_id not in self._wf_map:
             raise ValueError(f"Workflow {workflow_id} no encontrado")
 
         wf      = self._wf_map[workflow_id]

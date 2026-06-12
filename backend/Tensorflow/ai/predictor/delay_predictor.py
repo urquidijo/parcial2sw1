@@ -118,6 +118,8 @@ class DelayPredictor:
 
     def predict(self, workflow_id: str) -> dict:
         if workflow_id not in self._wf_map:
+            self._wf_map, _ = load_workflows()
+        if workflow_id not in self._wf_map:
             raise ValueError(f"Workflow {workflow_id} no encontrado")
 
         wf        = self._wf_map[workflow_id]

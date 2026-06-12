@@ -7,6 +7,7 @@ The Spring API helpers (api_get, etc.) remain available for other use cases.
 """
 import logging
 import os
+import time
 
 import pymongo
 import requests
@@ -68,73 +69,73 @@ def get_mongo_db():
 
 # ── Workflow data — reads directly from MongoDB ───────────────────────────────
 
-def load_workflows() -> tuple[dict, dict]:
+def load_workflows(max_retries: int = 4, retry_delay: int = 5) -> tuple[dict, dict]:
     """
     Load all workflows and their nodes directly from MongoDB.
-    Collections used: 'workflows', 'workflow_nodo'
+    Retries up to max_retries times (retry_delay seconds apart) so that a slow
+    MongoDB Atlas connection at container startup does not leave wf_map empty.
 
+    Collections: 'workflows', 'workflow_nodo'
     Returns:
       wf_map  : {wfId -> {name, nodos, num_nodos, total_expected_min}}
       nodo_map: {nodoId -> {avgMinutes, order, total_nodos, wfId, name}}
-
-    Nodes of type inicio / fin / start / end are excluded from both maps.
     """
-    try:
-        db = get_mongo_db()
-    except Exception as e:
-        logger.error(f"load_workflows: MongoDB connection failed — {e}")
-        return {}, {}
-
-    wf_map:   dict = {}
-    nodo_map: dict = {}
-
-    try:
-        workflows = list(db["workflows"].find({}))
-    except Exception as e:
-        logger.error(f"load_workflows: cannot query workflows — {e}")
-        return {}, {}
-
-    for wf in workflows:
-        wid = str(wf.get("_id", ""))
-        if not wid:
-            continue
-
+    for attempt in range(max_retries):
         try:
-            all_nodos = sorted(
-                db["workflow_nodo"].find({"workflowId": wid}),
-                key=lambda n: n.get("order", 999),
-            )
+            db        = get_mongo_db()
+            workflows = list(db["workflows"].find({}))
+
+            wf_map:   dict = {}
+            nodo_map: dict = {}
+
+            for wf in workflows:
+                wid = str(wf.get("_id", ""))
+                if not wid:
+                    continue
+
+                all_nodos = sorted(
+                    db["workflow_nodo"].find({"workflowId": wid}),
+                    key=lambda n: n.get("order", 999),
+                )
+                nodos = [
+                    n for n in all_nodos
+                    if (n.get("nodeType") or "").lower() not in ("inicio", "fin", "start", "end")
+                ]
+
+                total_min = sum(n.get("avgMinutes") or 30 for n in nodos)
+                wf_map[wid] = {
+                    "name":               wf.get("name", ""),
+                    "nodos":              [_nodo_doc(n) for n in nodos],
+                    "num_nodos":          len(nodos),
+                    "total_expected_min": max(total_min, 1),
+                }
+                for i, n in enumerate(nodos):
+                    nid = str(n.get("_id", ""))
+                    if not nid:
+                        continue
+                    nodo_map[nid] = {
+                        "avgMinutes":  n.get("avgMinutes") or 30,
+                        "order":       i,
+                        "total_nodos": len(nodos),
+                        "wfId":        wid,
+                        "name":        n.get("name", "Nodo"),
+                    }
+
+            if wf_map:
+                logger.info(f"load_workflows: {len(wf_map)} workflows, {len(nodo_map)} nodos")
+                return wf_map, nodo_map
+
+            # MongoDB responded but returned 0 workflows — data may not be seeded yet
+            logger.warning(f"load_workflows: 0 workflows found (attempt {attempt + 1}/{max_retries})")
+
         except Exception as e:
-            logger.warning(f"load_workflows: cannot load nodos for {wid} — {e}")
-            continue
+            logger.warning(f"load_workflows attempt {attempt + 1}/{max_retries} failed: {e}")
 
-        nodos = [
-            n for n in all_nodos
-            if (n.get("nodeType") or "").lower() not in ("inicio", "fin", "start", "end")
-        ]
+        if attempt < max_retries - 1:
+            time.sleep(retry_delay)
 
-        total_min = sum(n.get("avgMinutes") or 30 for n in nodos)
-        wf_map[wid] = {
-            "name":               wf.get("name", ""),
-            "nodos":              [_nodo_doc(n) for n in nodos],
-            "num_nodos":          len(nodos),
-            "total_expected_min": max(total_min, 1),
-        }
-
-        for i, n in enumerate(nodos):
-            nid = str(n.get("_id", ""))
-            if not nid:
-                continue
-            nodo_map[nid] = {
-                "avgMinutes":  n.get("avgMinutes") or 30,
-                "order":       i,
-                "total_nodos": len(nodos),
-                "wfId":        wid,
-                "name":        n.get("name", "Nodo"),
-            }
-
-    logger.info(f"load_workflows: {len(wf_map)} workflows, {len(nodo_map)} nodos")
-    return wf_map, nodo_map
+    logger.error("load_workflows: all retries exhausted — returning empty maps")
+    return {}, {}
 
 
 def _nodo_doc(n: dict) -> dict:

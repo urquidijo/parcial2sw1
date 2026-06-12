@@ -108,6 +108,8 @@ class BottleneckPredictor:
 
     def predict(self, workflow_id: str) -> dict:
         if workflow_id not in self._wf_map:
+            self._wf_map, self._nodo_map = load_workflows()
+        if workflow_id not in self._wf_map:
             raise ValueError(f"Workflow {workflow_id} not found")
 
         wf    = self._wf_map[workflow_id]
