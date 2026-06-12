@@ -2,12 +2,8 @@
 api_client.py
 Single source of truth for Spring Boot API access and MongoDB connections.
 
-All TF services import from here instead of duplicating:
-  - env-var constants (SPRING_API, credentials, MONGO_URI)
-  - auth / token refresh logic
-  - authenticated GET with automatic 401 retry
-  - standard workflow data loader
-  - MongoDB connection factory
+load_workflows() reads directly from MongoDB — no Spring API credentials needed.
+The Spring API helpers (api_get, etc.) remain available for other use cases.
 """
 import logging
 import os
@@ -32,7 +28,6 @@ _token: str = ""
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
 def refresh_token() -> str:
-    """Login against Spring Boot and cache the JWT. Returns the token."""
     global _token
     try:
         r = requests.post(
@@ -50,13 +45,11 @@ def refresh_token() -> str:
 
 
 def get_headers() -> dict:
-    """Return Authorization header dict, refreshing token if needed."""
     tok = _token or refresh_token()
     return {"Authorization": f"Bearer {tok}"} if tok else {}
 
 
 def api_get(path: str, params: dict | None = None) -> list | dict:
-    """GET {SPRING_API}{path} with automatic 401 token refresh."""
     r = requests.get(f"{SPRING_API}{path}", headers=get_headers(), params=params, timeout=15)
     if r.status_code == 401:
         refresh_token()
@@ -73,11 +66,12 @@ def get_mongo_db():
     return client[MONGO_DB]
 
 
-# ── Workflow data ─────────────────────────────────────────────────────────────
+# ── Workflow data — reads directly from MongoDB ───────────────────────────────
 
 def load_workflows() -> tuple[dict, dict]:
     """
-    Fetch all workflows from Spring Boot API.
+    Load all workflows and their nodes directly from MongoDB.
+    Collections used: 'workflows', 'workflow_nodo'
 
     Returns:
       wf_map  : {wfId -> {name, nodos, num_nodos, total_expected_min}}
@@ -86,24 +80,34 @@ def load_workflows() -> tuple[dict, dict]:
     Nodes of type inicio / fin / start / end are excluded from both maps.
     """
     try:
-        wf_list = api_get("/workflows")
+        db = get_mongo_db()
     except Exception as e:
-        logger.error(f"load_workflows: {e}")
+        logger.error(f"load_workflows: MongoDB connection failed — {e}")
         return {}, {}
 
     wf_map:   dict = {}
     nodo_map: dict = {}
 
-    for wf in (wf_list if isinstance(wf_list, list) else []):
-        wid = wf.get("id")
+    try:
+        workflows = list(db["workflows"].find({}))
+    except Exception as e:
+        logger.error(f"load_workflows: cannot query workflows — {e}")
+        return {}, {}
+
+    for wf in workflows:
+        wid = str(wf.get("_id", ""))
         if not wid:
             continue
+
         try:
-            full = api_get(f"/workflows/{wid}")
-        except Exception:
+            all_nodos = sorted(
+                db["workflow_nodo"].find({"workflowId": wid}),
+                key=lambda n: n.get("order", 999),
+            )
+        except Exception as e:
+            logger.warning(f"load_workflows: cannot load nodos for {wid} — {e}")
             continue
 
-        all_nodos = sorted(full.get("nodo", []), key=lambda n: n.get("order", 999))
         nodos = [
             n for n in all_nodos
             if (n.get("nodeType") or "").lower() not in ("inicio", "fin", "start", "end")
@@ -112,13 +116,16 @@ def load_workflows() -> tuple[dict, dict]:
         total_min = sum(n.get("avgMinutes") or 30 for n in nodos)
         wf_map[wid] = {
             "name":               wf.get("name", ""),
-            "nodos":              nodos,
+            "nodos":              [_nodo_doc(n) for n in nodos],
             "num_nodos":          len(nodos),
             "total_expected_min": max(total_min, 1),
         }
 
         for i, n in enumerate(nodos):
-            nodo_map[n["id"]] = {
+            nid = str(n.get("_id", ""))
+            if not nid:
+                continue
+            nodo_map[nid] = {
                 "avgMinutes":  n.get("avgMinutes") or 30,
                 "order":       i,
                 "total_nodos": len(nodos),
@@ -128,3 +135,15 @@ def load_workflows() -> tuple[dict, dict]:
 
     logger.info(f"load_workflows: {len(wf_map)} workflows, {len(nodo_map)} nodos")
     return wf_map, nodo_map
+
+
+def _nodo_doc(n: dict) -> dict:
+    """Convert a raw MongoDB nodo document to the dict shape expected by predictors."""
+    return {
+        "id":         str(n.get("_id", "")),
+        "name":       n.get("name", ""),
+        "nodeType":   n.get("nodeType", "proceso"),
+        "order":      n.get("order", 0),
+        "avgMinutes": n.get("avgMinutes") or 30,
+        "workflowId": n.get("workflowId", ""),
+    }

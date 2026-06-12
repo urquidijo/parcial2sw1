@@ -85,10 +85,8 @@ services:
     expose:
       - "8001"
     environment:
-      MONGODB_URI:     ${MONGODB_URI}
-      SPRING_API_URL:  http://backend:8080/api
-      SPRING_EMAIL:    ${TF_SPRING_EMAIL}
-      SPRING_PASSWORD: ${TF_SPRING_PASSWORD}
+      MONGODB_URI:    ${MONGODB_URI}
+      SPRING_API_URL: http://backend:8080/api
     volumes:
       - tf_models:/app/static/models
     depends_on:
