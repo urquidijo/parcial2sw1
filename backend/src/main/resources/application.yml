@@ -10,8 +10,7 @@ spring:
     name: workflow-backend
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb+srv://josue:223044571@bdsw1.rmlrnsm.mongodb.net/workflow_db?retryWrites=true&w=majority&appName=bdsw1}
-      auto-index-creation: true
+      uri: ${MONGODB_URI=mongodb+srv://josue:12445341@bdsw1.rmlrnsm.mongodb.net/workflow_db?retryWrites=true&w=majority&tls=true&appName=bdsw1}
   servlet:
     multipart:
       max-file-size: 50MB
