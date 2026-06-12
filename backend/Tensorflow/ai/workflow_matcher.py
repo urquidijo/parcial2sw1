@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from difflib import SequenceMatcher
@@ -9,7 +8,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 from tensorflow import keras
 
-from core.api_client import api_get, refresh_token
+from core.api_client import get_mongo_db
 from ai.text_utils import normalize as _normalize, get_first_process_nodo as _get_first_process_nodo
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,6 @@ class WorkflowMatcher:
         self.encoder    = None
         self.wf_embeddings: list[np.ndarray] = []
 
-        refresh_token()
         self._load_workflows()
 
         if self.workflows:
@@ -78,8 +76,7 @@ class WorkflowMatcher:
             logger.warning("WorkflowMatcher: sin workflows.")
 
     def reload(self):
-        """Re-carga workflows desde Spring Boot y re-construye el encoder."""
-        refresh_token()
+        """Re-carga workflows desde MongoDB y re-construye el encoder."""
         self._load_workflows()
         if self.workflows:
             self._build_encoder()
@@ -87,42 +84,57 @@ class WorkflowMatcher:
 
     def _load_workflows(self):
         try:
-            raw = api_get("/workflows")
-            if isinstance(raw, str):
-                raw = json.loads(raw)
+            db  = get_mongo_db()
+            raw = list(db["workflows"].find({}))
             self.workflows = [
-                {"id": w.get("id",""), "name": w.get("name","Workflow"), "description": w.get("description","")}
-                for w in (raw if isinstance(raw, list) else [])
-                if w.get("id") and w.get("name")
+                {
+                    "id":          str(w.get("_id", "")),
+                    "name":        w.get("name", "Workflow"),
+                    "description": w.get("description", ""),
+                }
+                for w in raw
+                if w.get("_id") and w.get("name")
             ]
         except Exception as e:
-            logger.warning(f"No se pudieron cargar workflows: {e}")
+            logger.warning(f"No se pudieron cargar workflows desde MongoDB: {e}")
             self.workflows = []
             return
 
         for w in self.workflows:
             wf_id = w["id"]
             try:
-                nodos = api_get(f"/workflows/{wf_id}").get("nodo", [])
+                nodos_raw = sorted(
+                    db["workflow_nodo"].find({"workflowId": wf_id}),
+                    key=lambda n: n.get("order", 9999),
+                )
+                # Convert to the shape _get_first_process_nodo expects
+                nodos = [
+                    {"id": str(n.get("_id", "")), "nodeType": n.get("nodeType", ""), "order": n.get("order", 0), "requiresForm": n.get("requiresForm", False)}
+                    for n in nodos_raw
+                ]
                 first_process = _get_first_process_nodo(nodos)
+
                 required, optional = [], []
                 if first_process:
-                    fields = (first_process.get("formDefinition") or {}).get("fields") or []
-                    for f in fields:
-                        name = (f.get("name") or "").strip()
-                        if not name:
-                            continue
-                        is_req = bool(f.get("required") or f.get("isRequired"))
-                        if is_req:
-                            required.append(name)
-                        else:
-                            optional.append(name)
+                    nodo_id  = first_process["id"]
+                    form_def = db["form_definitions"].find_one({"nodoId": nodo_id})
+                    if form_def:
+                        for f in (form_def.get("fields") or []):
+                            name = (f.get("name") or "").strip()
+                            if not name:
+                                continue
+                            if f.get("required", False):
+                                required.append(name)
+                            else:
+                                optional.append(name)
+
                 self.field_requirements[wf_id] = {"required": required, "optional": optional}
                 logger.debug(f"  {w['name']}: {len(required)} req, {len(optional)} opt")
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  {w['name']} fields error: {e}")
                 self.field_requirements[wf_id] = {"required": [], "optional": []}
 
-        logger.info(f"WorkflowMatcher: {len(self.workflows)} workflows cargados (campos del nodo 2).")
+        logger.info(f"WorkflowMatcher: {len(self.workflows)} workflows cargados (MongoDB directo).")
 
     def _build_encoder(self):
         wf_texts = [self._wf_text(w) for w in self.workflows]
